@@ -35,18 +35,25 @@ class DownloadError(RuntimeError):
     pass
 
 @click.command()
-@click.argument('data_url', default= 'http://yann.lecun.com/exdb/mnist/')
-@click.argument('output_filepath',
+@click.argument('--data_url',
+                default= 'http://yann.lecun.com/exdb/mnist/'
+                )
+@click.argument('--output_filepath',
                 default=os.path.join(os.getcwd(), "data/raw/"),
                 type=click.Path()
                 )
-def main(data_url, output_filepath):
+@click.option("--overwrite/--no-overwrite",
+              default=False)
+def main(__data_url, __output_filepath, overwrite):
 
-    """ Runs data processing scripts to download data to /raw, ready for processing.
+    """ Runs data processing scripts to download data to /raw, ready for processing. Does not overwrite existing files
+    by default. Set overwrite flag to do this (carefully)
 
     Args:
-        output_filepath: path to save the downloaded data, by default this is the sub-directory raw/ in the current
+        --data_url: url to download data from
+        --output_filepath: path to save the downloaded data, by default this is the sub-directory raw/ in the current
             working directory
+        --overwrite: flag to overwrite existing data, default is false to prevent accidental re-write
 
     Returns:
         list of files downloaded and their locations
@@ -55,20 +62,39 @@ def main(data_url, output_filepath):
     logger = logging.getLogger(__name__)
     logger.info('making final data set from raw data')
 
-    downloaded_files = [download_data(files_to_download[key], download_url=data_url)
+    downloaded_files = [download_data(files_to_download[key], download_url=__data_url)
                         for key in files_to_download
                         ]
 
     data_arrays = [open_and_parse_data(file)
                    for file in downloaded_files]
 
-    locations = [save_data_array(data, file_name=key, save_location=output_filepath)
-                 for data, key in zip(data_arrays, files_to_download)]
+    locations, saved, replaced = ([],[],[])
+
+    if overwrite:
+        logger.info(f"Overwriting as flag is {overwrite}")
+    else:
+        logger.info(f"Not overwriting as flag is {overwrite}")
+
+    for data, key in zip(data_arrays, files_to_download):
+        location, save, replace = save_data_array(data,
+                                                  file_name=key,
+                                                  save_location=__output_filepath,
+                                                  overwrite=overwrite)
+        locations.append(location)
+        saved.append(save)
+        replaced.append(replaced)
 
     logger.info("complete, files downloaded are...")
 
-    for key, location in zip(files_to_download, locations):
-        logger.info(f"{key} in {location}")
+    for key, location, save, replace in zip(files_to_download, locations, saved, replaced):
+
+        if save and replace:
+            logger.info(f"{key} replaced old file in {location}")
+        elif not save:
+            logger.info(f"{key} file exists in {location} so not saved. Set --overwrite flag to replace old file")
+        else:
+            logger.info(f"{key} saved in {location}")
 
     return locations
 
@@ -76,8 +102,7 @@ def main(data_url, output_filepath):
 
 def download_data(file_name,
              download_url,
-             target_dir=temp_dir,
-             logger=logging.getLogger(__name__)
+             target_dir=temp_dir
              ):
 
     """
@@ -87,12 +112,12 @@ def download_data(file_name,
         file_name: file to download from download_url
         download_url: Address to download data from
         target_dir: directory to store data
-        logger: logger from module logging
 
     Returns:
         (string): name and location of file downloaded on successful download
 
     """
+    logger = logging.getLogger(__name__)
 
     file_to_download = os.path.join(target_dir, file_name)
     file_url = urljoin(download_url, file_name)
@@ -108,8 +133,9 @@ def download_data(file_name,
         raise DownloadError(f"{file_url} not downloaded")
 
 
-def open_and_parse_data(file_location, logger=logging.getLogger(__name__)):
+def open_and_parse_data(file_location):
 
+    logger = logging.getLogger(__name__)
     logger.info(f"unpacking {file_location}")
 
     if os.path.splitext(file_location)[1] == ".gz":
@@ -121,15 +147,12 @@ def open_and_parse_data(file_location, logger=logging.getLogger(__name__)):
             return parse_data(file)
 
 
-def parse_data(file,
-               logger=logging.getLogger(__name__)
-               ):
+def parse_data(file):
     """
     Check data integrity and return data if it appears correct
 
     Args:
         file: file to parse
-        logger: logger from logging module
 
     Returns:
         (array): numpy array containing data
@@ -142,6 +165,7 @@ def parse_data(file,
                        0x0d: 'f',  # float (4 bytes)
                        0x0e: 'd'  # double (8 bytes))
                        }
+    logger = logging.getLogger(__name__)
     logger.info("Begin parsing...")
 
     header = file.read(4)
@@ -179,13 +203,38 @@ def parse_data(file,
 def save_data_array(data,
                     file_name,
                     save_location,
-                    logger=logging.getLogger(__name__)):
+                    overwrite=False
+                    ):
+    """
+    Saves downloaded data as binary (.npy) file
+    Args:
+        data: numpy array containing data to save
+        file_name: name of the file
+        save_location: path to save
+        overwrite: boolean to overwrite any files, by default this if false
 
-    logger.info(f"Saving {file_name} to {save_location}")
-    file_path = os.path.join(save_location,file_name)
-    np.save(file_path, data)
+    Returns:
+
+    """
+    logger = logging.getLogger(__name__)
+    file_path = os.path.join(save_location, file_name)
+    if os.path.exists(file_path+".npy") & overwrite:
+        logger.warn(f"{file_path} exists, overwriting as --overwrite flag is set")
+        np.save(file_path, data)
+        saved = True
+        replaced = True
+    elif os.path.exists(file_path+".npy") & (not overwrite):
+        logger.warn(f"{file_path} exists, not overwriting as --no-overwrite flag or no flag is set")
+        saved = False
+        replaced = False
+    else:
+        logger.info(f"Saving {file_name} as {file_path}")
+        np.save(file_path, data)
+        saved = True
+        replaced = False
+
     logger.info("done")
-    return file_path
+    return file_path, saved, replaced
 
 if __name__ == '__main__':
     log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
