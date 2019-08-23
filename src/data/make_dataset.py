@@ -218,6 +218,8 @@ def save_data_array(data,
     """
     logger = logging.getLogger(__name__)
     file_path = os.path.join(save_location, file_name)
+
+    # behaviour depends on if file exists and what the overwrite flag is set to
     if os.path.exists(file_path+".npy") & overwrite:
         logger.warn(f"{file_path} exists, overwriting as --overwrite flag is set")
         np.save(file_path, data)

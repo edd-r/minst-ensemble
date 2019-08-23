@@ -17,6 +17,9 @@ urllib3 = "*"
 numpy = "*"
 matplotlib = "*"
 scipy = "*"
+tqdm = "*"
+jupyter = "*"
+ipywidgets = "*"
 
 [requires]
 python_version = "3.6"
