@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import struct
+
 import click
 import logging
 import tempfile
@@ -11,6 +12,7 @@ import numpy as np
 
 from pathlib import Path
 
+from urllib.error import ContentTooShortError
 from urllib.request import urlretrieve
 from urllib.parse import urljoin
 
@@ -25,6 +27,7 @@ files_to_download = {"X_train": 'train-images-idx3-ubyte.gz',
                      "y_test": 't10k-labels-idx1-ubyte.gz',
                      }
 
+
 class DecodeError(ValueError):
     """Raised when an invalid idx file is parsed."""
     pass
@@ -34,9 +37,10 @@ class DownloadError(RuntimeError):
     """Raised when downloading fails"""
     pass
 
+
 @click.command()
 @click.argument('--data_url',
-                default= 'http://yann.lecun.com/exdb/mnist/'
+                default='http://yann.lecun.com/exdb/mnist/'
                 )
 @click.argument('--output_filepath',
                 default=os.path.join(os.getcwd(), "data/raw/"),
@@ -69,7 +73,7 @@ def main(__data_url, __output_filepath, overwrite):
     data_arrays = [open_and_parse_data(file)
                    for file in downloaded_files]
 
-    locations, saved, replaced = ([],[],[])
+    locations, saved, replaced = ([], [], [])
 
     if overwrite:
         logger.info(f"Overwriting as flag is {overwrite}")
@@ -99,11 +103,10 @@ def main(__data_url, __output_filepath, overwrite):
     return locations
 
 
-
 def download_data(file_name,
-             download_url,
-             target_dir=temp_dir
-             ):
+                  download_url,
+                  target_dir=temp_dir
+                  ):
 
     """
     downloads file_name from data_url into target_directory
@@ -128,7 +131,7 @@ def download_data(file_name,
         urlretrieve(file_url, file_to_download)
         logging.info("success!")
         return file_to_download
-    except:
+    except ContentTooShortError:
         logger.info("download unsuccessful")
         raise DownloadError(f"{file_url} not downloaded")
 
@@ -195,7 +198,7 @@ def parse_data(file):
     # format as numpy array and return
     data = np.array(data).reshape(data_dims)
 
-    logger.info(("...parse complete"))
+    logger.info("...parse complete")
 
     return data
 
@@ -214,19 +217,20 @@ def save_data_array(data,
         overwrite: boolean to overwrite any files, by default this if false
 
     Returns:
-
+        list of files saved, list indicating if file was saved or not depending on overwrite flag, list inicating if
+        an existing file was replaced because overwrite was set to True
     """
     logger = logging.getLogger(__name__)
     file_path = os.path.join(save_location, file_name)
 
     # behaviour depends on if file exists and what the overwrite flag is set to
     if os.path.exists(file_path+".npy") & overwrite:
-        logger.warn(f"{file_path} exists, overwriting as --overwrite flag is set")
+        logger.warning(f"{file_path} exists, overwriting as --overwrite flag is set")
         np.save(file_path, data)
         saved = True
         replaced = True
     elif os.path.exists(file_path+".npy") & (not overwrite):
-        logger.warn(f"{file_path} exists, not overwriting as --no-overwrite flag or no flag is set")
+        logger.warning(f"{file_path} exists, not overwriting as --no-overwrite flag or no flag is set")
         saved = False
         replaced = False
     else:
@@ -237,6 +241,7 @@ def save_data_array(data,
 
     logger.info("done")
     return file_path, saved, replaced
+
 
 if __name__ == '__main__':
     log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'

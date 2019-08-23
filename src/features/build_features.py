@@ -21,6 +21,8 @@ raw_file_names = {"X_train": "X_train.npy",
                   }
 
 # TODO: get these click arguments working to pass variables from terminal
+
+
 @click.command()
 @click.argument("raw_data_location",
                 default=os.path.join(os.getcwd(), "data/raw/"),
@@ -38,8 +40,8 @@ raw_file_names = {"X_train": "X_train.npy",
                 type=int
                 )
 @click.argument("pixel_increments",
-                 default=1,
-                 type=int
+                default=1,
+                type=int
                 )
 @click.argument("blur_sigma",
                 default=1,
@@ -60,7 +62,7 @@ def main(raw_data_location,
 
     logger.info("Loading raw data data")
     data_dict = get_all_data(file_names=file_names,
-                              directory=raw_data_location
+                             directory=raw_data_location
                              )
 
     # do we have values to created shifted images for data augmentation?
@@ -82,7 +84,6 @@ def main(raw_data_location,
 
         except KeyError:
             logger.warning("X train or y train data not found, skipping augmentation")
-
 
     else:
         logger.info("No data augmentation applied"
@@ -112,7 +113,7 @@ def main(raw_data_location,
         if save and replace:
             logger.info(f"{file_name} replaced old file in {output_location}")
         elif not save:
-            logger.info(f"{file_name} file exists in {output_location}" 
+            logger.info(f"{file_name} file exists in {output_location}"
                         "so not saved. Set --overwrite flag to replace old file")
         else:
             logger.info(f"{file_name} saved in {output_location}")
@@ -152,7 +153,7 @@ def get_all_data(file_names,
     files_to_return = list(set(file_names.keys())-set(ioerror_files))
 
     # converting to sets messes up order, so we sort, might be fixed with python 3.6+
-    files_to_return=sorted(set(files_to_return), key=list(file_names.keys()).index)
+    files_to_return = sorted(set(files_to_return), key=list(file_names.keys()).index)
 
     data_loaded = dict(zip(files_to_return, data))
 
@@ -173,28 +174,28 @@ def shift_image(image, pixels_to_shift):
 
     # shift right
     right_image = shift(image,
-                     [0,pixels_to_shift],
+                        [0, pixels_to_shift],
+                        cval=0,
+                        mode="constant"
+                        )
+    # shift_left
+    left_image = shift(image,
+                       [0, -pixels_to_shift],
+                       cval=0,
+                       mode="constant"
+                       )
+    # shift_up
+    up_image = shift(image,
+                     [-pixels_to_shift, 0],
                      cval=0,
                      mode="constant"
                      )
-    # shift_left
-    left_image = shift(image,
-                       [0,-pixels_to_shift],
-                       cval=0,
-                       mode="constant"
-                      )
-    # shift_up
-    up_image = shift(image,
-                       [-pixels_to_shift,0],
-                       cval=0,
-                       mode="constant"
-                      )
     # shift_down
     down_image = shift(image,
-                       [pixels_to_shift,0],
+                       [pixels_to_shift, 0],
                        cval=0,
                        mode="constant"
-                      )
+                       )
 
     return np.array([up_image, down_image, left_image, right_image])
 
@@ -203,7 +204,7 @@ def augment_images(x_data,
                    y_data,
                    pixels_to_shift,
                    times_to_shift
-                  ):
+                   ):
 
     """
     Creates augmented image data for classification by shifting image up, down, left and right a specified number of
@@ -229,7 +230,7 @@ def augment_images(x_data,
 
         augmented_data = [shift_image(X, pixels_to_shift*n)
                           for n in range(1, times_to_shift+1)
-                         ]
+                          ]
 
         augmented_data = np.concatenate(augmented_data, axis=0)
 
@@ -255,7 +256,7 @@ def blur_data(X_data, sigma):
 
     blurred_images = np.array([gaussian_filter(image, sigma)
                                for image in tqdm(X_data, desc="Applying gaussian blur")
-                              ])
+                               ])
 
     return blurred_images
 
@@ -277,7 +278,7 @@ def flatten_data(data_dict, feature_keys=("X_train", "X_test")):
             # Flatten images from 2D array to 1D array
             data_dict[key] = data_dict[key].reshape(data_dict[key].shape[0], -1)
         except KeyError:
-            logging.ERROR("key: {key} not found in data, cannot flatten." 
+            logging.ERROR("key: {key} not found in data, cannot flatten."
                           "Set feature_keys to correct keys for images in data_dict ")
 
     return data_dict
@@ -311,13 +312,13 @@ def save_processed_data(data_dict, save_location, file_suffix="", overwrite=Fals
 
         # behaviour depends on if file exists and what the overwrite flag is set to
         if os.path.exists(file_path+".npy") & overwrite:
-            logger.warn(f"{file_path} exists, overwriting as --overwrite flag is set")
+            logger.warning(f"{file_path} exists, overwriting as --overwrite flag is set")
             np.save(file_path, data_dict[key])
             saved.append(True)
             replaced.append(True)
 
         elif os.path.exists(file_path+".npy") & (not overwrite):
-            logger.warn(f"{file_path} exists, not overwriting as --no-overwrite flag or no flag is set")
+            logger.warning(f"{file_path} exists, not overwriting as --no-overwrite flag or no flag is set")
             saved.append(False)
             replaced.append(False)
         else:
