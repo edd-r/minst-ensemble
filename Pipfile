@@ -5,6 +5,7 @@ verify_ssl = true
 
 [dev-packages]
 flake8 = "*"
+pytest = "*"
 
 [packages]
 src = {editable = true,file = "file:///home/edd/Documents/Projects/minst-ensemble"}
