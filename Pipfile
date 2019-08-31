@@ -6,6 +6,8 @@ verify_ssl = true
 [dev-packages]
 flake8 = "*"
 pytest = "*"
+autopep8 = "*"
+v = {editable = true,version = "*"}
 
 [packages]
 src = {editable = true,file = "file:///home/edd/Documents/Projects/minst-ensemble"}
@@ -22,6 +24,10 @@ scipy = "*"
 tqdm = "*"
 jupyter = "*"
 ipywidgets = "*"
+ipykernel = "*"
+jupyter-contrib-nbextensions = "*"
+sklearn = "*"
+yellowbrick = "*"
 
 [requires]
 python_version = "3.6"

@@ -15,8 +15,9 @@ def load_processed_data(file_path=os.path.join(os.getcwd(), "data/processed/"),
                         file_names=file_names,
                         augmented_suffix="_augmented",
                         blurred_suffix="_blurred",
-                        scaled_suffix="_scaled"
+                        scaled_suffix = "_scaled"
                         ):
+
     """
     loads processed data into key value pairs in a dictionary with keys matching the keys in file_names and values as
     the data
@@ -26,7 +27,6 @@ def load_processed_data(file_path=os.path.join(os.getcwd(), "data/processed/"),
         file_names: key value pairs of the file to load and its file name
         augmented_suffix: load augmented data with this suffix
         blurred_suffix: load blurred data with this suffix
-        scaled_suffix: load scaled data with this suffix
 
     Returns:
         key value pairs of the name of the data as the key and the data itself as the value
@@ -35,18 +35,19 @@ def load_processed_data(file_path=os.path.join(os.getcwd(), "data/processed/"),
 
     logger = logging.getLogger(__name__)
     data = []
-    for key in tqdm_notebook(file_names, desc=f"loading files from {file_path}"):
+    for key in tqdm_notebook(file_names):
 
         file_name = file_names[key]
 
         if augmented_suffix is not "":
-            file_name = file_name.replace(".", augmented_suffix + ".")
+
+            file_name = file_name.replace(".", augmented_suffix+".")
 
         if blurred_suffix is not "":
-            file_name = file_name.replace(".", blurred_suffix + ".")
+            file_name = file_name.replace(".", blurred_suffix+".")
 
         if scaled_suffix is not "":
-            file_name = file_name.replace(".", scaled_suffix + ".")
+            file_name = file_name.replace(".", scaled_suffix+".")
 
         file_to_load = os.path.join(file_path, file_name)
         logger.info(f"loading {key} in file {file_to_load}")

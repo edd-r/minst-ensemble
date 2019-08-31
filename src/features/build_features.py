@@ -9,6 +9,8 @@ from tqdm import tqdm
 from scipy.ndimage.interpolation import shift
 from scipy.ndimage import gaussian_filter
 
+from sklearn.preprocessing import StandardScaler
+
 from dotenv import find_dotenv, load_dotenv
 
 from pathlib import Path
@@ -24,43 +26,52 @@ raw_file_names = {"X_train": "X_train.npy",
 
 
 @click.command()
-@click.argument("raw_data_location",
+@click.option("--r",
+                "raw_data_location",
                 default=os.path.join(os.getcwd(), "data/raw/"),
                 type=click.Path()
                 )
-@click.argument("output_location",
+@click.option("--o",
+                "output_location",
                 default=os.path.join(os.getcwd(), "data/processed/"),
                 type=click.Path()
                 )
-@click.argument("file_names",
+@click.option("--n",
+                "file_names",
                 default=raw_file_names
                 )
-@click.argument("pixel_shift",
+@click.option("--p",
+                "pixel_shift",
                 default=5,
                 type=int
                 )
-@click.argument("pixel_increments",
+@click.option("--i",
+                "pixel_increments",
                 default=1,
                 type=int
                 )
-@click.argument("blur_sigma",
+@click.option("--b",
+                "blur_sigma",
                 default=1,
                 type=float)
 @click.option("--overwrite/--no-overwrite",
               default=False)
+@click.option("--scale/--no-scale",
+              default=True)
 def main(raw_data_location,
          output_location,
          file_names,
          pixel_shift,
          pixel_increments,
          blur_sigma,
+         scale,
          overwrite
          ):
 
     logger = logging.getLogger(__name__)
     file_suffix = ""  # what we append to the saved file names
 
-    logger.info("Loading raw data data")
+    logger.info(f"Loading raw data data from {raw_data_location}")
     data_dict = get_all_data(file_names=file_names,
                              directory=raw_data_location
                              )
@@ -104,6 +115,12 @@ def main(raw_data_location,
 
     logger.info("Flattening arrays for machine learning models")
     data_dict = flatten_data(data_dict)
+
+    if scale:
+        logger.info("scaling data")
+        data_dict["X_train"] = scale_images(data_dict["X_train"])
+        data_dict["X_test"] = scale_images(data_dict["X_test"])
+        file_suffix = file_suffix + "_scaled"
 
     logger.info(f"writing data to {output_location}")
     file_locations, saved, replaced = save_processed_data(data_dict, output_location, file_suffix, overwrite)
@@ -259,6 +276,19 @@ def blur_data(X_data, sigma):
                                ])
 
     return blurred_images
+
+def scale_images(X_data):
+    """
+    Scale images using sklearn standard scaler
+    Args:
+        X_data: data to scale
+
+    Returns: numpy array containing scaled data
+
+    """
+
+    scaler = StandardScaler()
+    return scaler.fit_transform(X_data)
 
 
 def flatten_data(data_dict, feature_keys=("X_train", "X_test")):
