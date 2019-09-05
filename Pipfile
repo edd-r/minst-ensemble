@@ -28,6 +28,7 @@ ipykernel = "*"
 jupyter-contrib-nbextensions = "*"
 sklearn = "*"
 yellowbrick = "*"
+pandas = "*"
 
 [requires]
 python_version = "3.6"

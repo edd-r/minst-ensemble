@@ -4,6 +4,7 @@ import sys
 import tqdm
 import logging
 
+import itertools as it
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -52,6 +53,48 @@ def plot_images(images_dict, plotting=True):
     if plotting:
         plt.plot()
     return fig, axs
+
+
+def compare_images(image_dict_list, image_categories=None):
+
+    logger = logging.getLogger(__name__)
+
+    if image_categories is None:
+        image_categories = [f"column {n+1}" for n in range(len(image_dict_list))]
+
+    # get all the keys for each of our dictionaries in list
+    keys = [list(dictionary.keys()) for dictionary in image_dict_list]
+
+    # same order
+    for key in keys:
+        key.sort()
+
+    # are the keys for all our dictionaries the same
+    if not all([a == b for a, b in it.combinations(keys, 2)]):
+        logger.error("Passed dictionaries don't have the same keys, cannot compare")
+        return None
+    else:
+        key_list = keys[0]  # we have established all lists in keys are identical, so take the first
+
+    fig, axes = plt.subplots(nrows=len(key_list),
+                             ncols=len(image_dict_list),
+                             figsize=(10, 10))
+    fig.subplots_adjust(wspace=0, hspace=0)
+
+    for key_index, image_index in it.product(range(len(key_list)), range(len(image_dict_list))):
+
+        logger.info(f"plotting at {key_index}:{image_index}")
+        axes[key_index, image_index].imshow(image_dict_list[image_index][key_list[key_index]])
+
+        # set labels for top and leftmost images
+        if key_index == 0:
+            axes[key_index, image_index].set_xlabel(image_categories[image_index])
+            axes[key_index, image_index].xaxis.set_label_position("top")
+
+        if image_index == 0:
+            axes[key_index, image_index].set_ylabel(f"label: {key_list[key_index]}")
+
+    return fig, axes
 
 log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 logging.basicConfig(level=logging.INFO, format=log_fmt)
