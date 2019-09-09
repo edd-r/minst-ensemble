@@ -4,9 +4,12 @@ import sys
 import tqdm
 import logging
 
+import pandas as pd
 import itertools as it
 import numpy as np
 import matplotlib.pyplot as plt
+import kneed as kn
+import sklearn.decomposition as decomp
 
 # add project modules to the path
 path_to_module = os.path.abspath(os.path.join(os.getcwd(), "..", "src/"))
@@ -96,5 +99,5 @@ def compare_images(image_dict_list, image_categories=None):
 
     return fig, axes
 
-log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-logging.basicConfig(level=logging.INFO, format=log_fmt)
+
+

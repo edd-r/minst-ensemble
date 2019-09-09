@@ -29,6 +29,8 @@ jupyter-contrib-nbextensions = "*"
 sklearn = "*"
 yellowbrick = "*"
 pandas = "*"
+seaborn = "*"
+kneed = "*"
 
 [requires]
 python_version = "3.6"

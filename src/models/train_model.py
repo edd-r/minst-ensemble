@@ -1,8 +1,9 @@
 import os
 import logging
+import tqdm
 
 import numpy as np
-from tqdm import tqdm_notebook
+
 
 file_names = {"X_train": "X_train.npy",
               "X_test": "X_test.npy",
@@ -35,7 +36,7 @@ def load_processed_data(file_path=os.path.join(os.getcwd(), "data/processed/"),
 
     logger = logging.getLogger(__name__)
     data = []
-    for key in tqdm_notebook(file_names, desc=f"loading files from {file_path}"):
+    for key in tqdm.tqdm(file_names, desc=f"loading files from {file_path}"):
 
         file_name = file_names[key]
 
