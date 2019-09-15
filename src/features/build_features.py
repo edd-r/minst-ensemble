@@ -14,7 +14,6 @@ from scipy.ndimage import gaussian_filter
 from sklearn.preprocessing import StandardScaler
 
 from dotenv import find_dotenv, load_dotenv
-
 from pathlib import Path
 
 
@@ -340,6 +339,16 @@ def find_pca_knee(pca,
                                                         )
 
     return var_kneedle, explained_var_kneedle
+
+def combine_train_test_data(file_path=os.path.join(os.getcwd(), "data/processed/"),
+                            file_names=file_names,
+                            augmented_suffix="_augmented",
+                            blurred_suffix="_blurred",
+                            scaled_suffix="_scaled"
+                            ):
+
+
+
 
 
 def dimensionality_reduce_data(x_datamodel=decomp.pca):
