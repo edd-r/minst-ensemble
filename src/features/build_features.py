@@ -2,9 +2,8 @@ import os
 import logging
 import click
 
-import pandas as pd
 import numpy as np
-import sklearn.decomposition as decomp
+
 
 from tqdm import tqdm
 
@@ -313,51 +312,6 @@ def flatten_data(data_dict, feature_keys=("X_train", "X_test")):
                           "Set feature_keys to correct keys for images in data_dict ")
 
     return data_dict
-
-def find_pca_knee(pca,
-                  sensitivity=10,
-                 ):
-
-    df = pd.DataFrame({"explained_variance": pca.explained_variance_,
-                       "explained_variance_ratio": pca.explained_variance_ratio_,
-                       "components": [n for n in range(len(pca.explained_variance_))]}
-                      )
-    df["explained_variance_ratio"] = df["explained_variance_ratio"].cumsum()
-
-    var_kneedle = kn.knee_locator.KneeLocator(x=df["components"],
-                                              y=df["explained_variance"],
-                                              S=sensitivity,
-                                              curve="convex",
-                                              direction="decreasing"
-                                              )
-
-    explained_var_kneedle = kn.knee_locator.KneeLocator(x=df["components"],
-                                                        y=df["explained_variance_ratio"],
-                                                        S=sensitivity,
-                                                        curve="concave",
-                                                        direction="increasing"
-                                                        )
-
-    return var_kneedle, explained_var_kneedle
-
-def combine_train_test_data(file_path=os.path.join(os.getcwd(), "data/processed/"),
-                            file_names=file_names,
-                            augmented_suffix="_augmented",
-                            blurred_suffix="_blurred",
-                            scaled_suffix="_scaled"
-                            ):
-
-
-
-
-
-def dimensionality_reduce_data(x_datamodel=decomp.pca):
-
-    var_knee, explained_var_knee = find_pca_knee(pca)
-
-    return var_knee.knee, explained_var_knee.knee
-
-
 
 
 def save_processed_data(data_dict, save_location, file_suffix="", overwrite=False):
