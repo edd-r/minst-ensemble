@@ -1,5 +1,6 @@
 import os
 import sys
+import logging
 
 import numpy as np
 import pandas as pd
@@ -14,15 +15,19 @@ sys.path.append(path_to_module)
 
 import src.models.train_model as train_model
 
+
 file_names = {"X_train": "X_train.npy",
               "X_test": "X_test.npy",
               "y_train": "y_train.npy",
               "y_test": "y_test.npy"
               }
 
+
 def find_pca_knee(pca,
                   sensitivity=10,
                   ):
+
+    logger = logging.getLogger(__name__)
 
     df = pd.DataFrame({"explained_variance": pca.explained_variance_,
                        "explained_variance_ratio": pca.explained_variance_ratio_,
@@ -30,6 +35,7 @@ def find_pca_knee(pca,
                       )
     df["explained_variance_ratio"] = df["explained_variance_ratio"].cumsum()
 
+    logger.info("Finding explained varience inflexion point")
     var_kneedle = kn.knee_locator.KneeLocator(x=df["components"],
                                               y=df["explained_variance"],
                                               S=sensitivity,
@@ -37,6 +43,7 @@ def find_pca_knee(pca,
                                               direction="decreasing"
                                               )
 
+    logger.info("Finding explained varience ratio inflexion point")
     explained_var_kneedle = kn.knee_locator.KneeLocator(x=df["components"],
                                                         y=df["explained_variance_ratio"],
                                                         S=sensitivity,
@@ -64,23 +71,99 @@ def combine_train_test_data(file_path=os.path.join(os.getcwd(), "data/processed/
     # combine X and y data
     X = np.concatenate([data_dict["X_train"], data_dict["X_test"]])
     y = np.concatenate([data_dict["y_train"], data_dict["y_test"]])
+    training = np.full(data_dict["y_train"].shape, "train")
+    testing = np.full(data_dict["y_test"].shape, "test")
+    labels = np.concatenate([training, testing])
+    return X, y, labels
 
-    return X, y
+
+def save_decomp_data(X,
+                     y,
+                     labels,
+                     suffix,
+                     path_to_write=os.path.join(os.getcwd(), "data/processed/"),
+                     overwrite=False
+                     ):
+
+    logger = logging.getLogger(__name__)
+    logger.info("reconstructing train/test split")
+    data_dict = {"X_train": X[labels == "train"],
+                 "X_test": X[labels == "test"],
+                 "y_train": y[labels == "train"],
+                 "y_test": y[labels == "test"]
+                 }
+
+    logging.info(f"saving to {path_to_write}")
+
+    for key in data_dict:
+        file_name = key + suffix
+        file_path=os.path.join(path_to_write, file_name)
+        # behaviour depends on if file exists and what the overwrite flag is set to
+        if os.path.exists(file_path + ".npy") & overwrite:
+            logger.warning(f"{file_path} exists, overwriting as --overwrite flag is set")
+            np.save(file_path, data_dict[key])
+
+        elif os.path.exists(file_path+".npy") & (not overwrite):
+            logger.warning(f"{file_path} exists, not overwriting as --no-overwrite flag or no flag is set")
+        else:
+            logger.info(f"Saving {file_name} as {file_path}")
+            np.save(file_path, data_dict[key])
+
+    logger.info("done")
 
 
-def main(data_model=decomp.PCA()):
+    return data_dict
 
-    X,y combine_train_test_data()
 
+def main(decomp_by="varience",
+         model=decomp.PCA,
+         file_path=os.path.join(os.getcwd(), "data/processed/"),
+         file_names=file_names,
+         augmented_suffix="_augmented",
+         blurred_suffix="_blurred",
+         scaled_suffix="_scaled",
+         overwrite=False,
+         ):
+
+    log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    logging.basicConfig(level=logging.INFO, format=log_fmt)
+    logger = logging.getLogger(__name__)
+    logger.info("loading data")
+
+    X, y, labels = combine_train_test_data(file_path,
+                                           file_names,
+                                           augmented_suffix,
+                                           blurred_suffix,
+                                           scaled_suffix
+                                           )
+    data_model = model()
+    logger.info("fitting PCA")
     data_model.fit(X)
+    logger.info("Finding varience inflexion points")
     var_knee, explained_var_knee = find_pca_knee(pca=data_model)
 
-    X_decomp_explaine_var = data_model.components_
+    logger.info(f"decomp_by is {decomp_by}")
 
-def dimensionality_reduce_data(x_data_model= decomp.pca):
+    if decomp_by is "varience":
+        logger.info("using explained varience inflexion point")
+        n_components = var_knee.knee
 
-    var_knee, explained_var_knee = find_pca_knee(pca)
+    elif decomp_by is "varience_ratio":
+        logger.info("using explained varience ratio inflexion point")
+        n_components = explained_var_knee.knee
+    else:
+        logger.warning("value not known, using explained variance inflexion point by default")
+        n_components = var_knee.knee
 
-    return var_knee.knee, explained_var_knee.knee
+    logger.info(f"fitting model with {n_components} components")
+    decomp_model = model(n_components=n_components)
+    X_decomp = decomp_model.fit_transform(X)
+
+    logger.info(("saving data"))
+    suffix = augmented_suffix+blurred_suffix+scaled_suffix+"_decomp"
+    decomp_dict = save_decomp_data(X_decomp, y, labels, suffix, overwrite=overwrite)
+    logger.info("done")
+    return decomp_dict
+
 
 
