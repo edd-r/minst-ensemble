@@ -26,6 +26,20 @@ file_names = {"X_train": "X_train.npy",
 def find_pca_knee(pca,
                   sensitivity=10,
                   ):
+    """
+    Applies kneedle algorithm from kneed package to find the inflexion point as a method of automatically selecting
+    the optimum number of principle components
+
+    Args:
+        pca: fitted pca model class, or similar. Needs to have explained_varience_ and explained_varience_ratio variables
+        sensitivity: sensitivy to the 'curveyness' of the inflexion point. Lower values are will return fewer components,
+            but may find local minima if too sensitive. Larger values are less likely to find the local minima, but may
+            return too many components to use.
+
+    Returns: two kneedle KneeLocator objects, one based on expalined varience, the other based on explained varience ratio
+        explained varience ratio tends to return more components
+
+    """
 
     logger = logging.getLogger(__name__)
 
@@ -61,6 +75,20 @@ def combine_train_test_data(file_path=os.path.join(os.getcwd(), "data/processed/
                             scaled_suffix="_scaled"
                             ):
 
+    """
+    combines previously split train and test data for decomposition.
+
+    Args:
+        file_path: path where the data is stored
+        file_names: names of the files in file_path
+        augmented_suffix: is the data augmented? if so set this suffix
+        blurred_suffix: is the data blurred? if so set this suffix
+        scaled_suffix: is the data scaled? if so set this suffix
+
+    Returns: the combine data, the classes and labels if that data was part of the train or test split
+
+    """
+
     data_dict = train_model.load_processed_data(file_path,
                                                 file_names,
                                                 augmented_suffix,
@@ -84,6 +112,20 @@ def save_decomp_data(X,
                      path_to_write=os.path.join(os.getcwd(), "data/processed/"),
                      overwrite=False
                      ):
+
+    """
+    saves the decomposed data as seperate test train split data sets
+    Args:
+        X: the decomposed data
+        y: data classes
+        labels: if each observation is in the test or train splits
+        suffix: suffix to add to the files names
+        path_to_write: where the data will be saved
+        overwrite: set to overwrite any files
+
+    Returns: dictionary of test train splits of X and y
+
+    """
 
     logger = logging.getLogger(__name__)
     logger.info("reconstructing train/test split")
@@ -124,6 +166,24 @@ def main(decomp_by="varience",
          scaled_suffix="_scaled",
          overwrite=False,
          ):
+
+    """
+    main pipeline to find the numeber of components and decompose the data
+    Args:
+        decomp_by: variable used to select the optimum components, varience for explained variance and varience_ratio
+            for explained varience ratio
+        model: sklearn method to use for decomposition, must have explained_varience_ and explained_varience_ratio_
+            values
+        file_path: path to load data from
+        file_names: file names of data in file path
+        augmented_suffix: load augmented data with this suffix
+        blurred_suffix: load blurred data with this suffix
+        scaled_suffix: load scaled data with this suffix
+        overwrite: will overwrite exisiting files if set to True
+
+    Returns:
+
+    """
 
     log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     logging.basicConfig(level=logging.INFO, format=log_fmt)

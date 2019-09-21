@@ -8,6 +8,9 @@ flake8 = "*"
 pytest = "*"
 autopep8 = "*"
 v = {editable = true,version = "*"}
+sphinx = "*"
+rinohtype = "*"
+sphinxcontrib-napoleon = "*"
 
 [packages]
 src = {editable = true,file = "file:///home/edd/Documents/Projects/minst-ensemble"}

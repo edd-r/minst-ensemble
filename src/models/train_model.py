@@ -16,7 +16,8 @@ def load_processed_data(file_path=os.path.join(os.getcwd(), "data/processed/"),
                         file_names=file_names,
                         augmented_suffix="_augmented",
                         blurred_suffix="_blurred",
-                        scaled_suffix="_scaled"
+                        scaled_suffix="_scaled",
+                        decomp_suffix="_decomp"
                         ):
     """
     loads processed data into key value pairs in a dictionary with keys matching the keys in file_names and values as
@@ -48,6 +49,8 @@ def load_processed_data(file_path=os.path.join(os.getcwd(), "data/processed/"),
 
         if scaled_suffix is not "":
             file_name = file_name.replace(".", scaled_suffix + ".")
+        if decomp_suffix is not "":
+            file_name = file_name.replace(".",decomp_suffix + ".")
 
         file_to_load = os.path.join(file_path, file_name)
         logger.info(f"loading {key} in file {file_to_load}")

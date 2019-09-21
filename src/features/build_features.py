@@ -68,6 +68,23 @@ def main(raw_data_location,
          overwrite
          ):
 
+    """
+    Runs the build features pipeline to take the raw data and augment it by shifting the data in one of 4 directions
+    and apply a guassian blur to the images before flattening the pixel matrix into an array, ready for Machine learning
+    Args:
+        raw_data_location: location of the data to be processed
+        output_location: where the data will be stored once it is processed
+        file_names: names of the files the data will be saved
+        pixel_shift: number of pixels to shift the image left, right up and down for each iteration
+        pixel_increments: number of times to apply the pixel shift.
+        blur_sigma: sigma for guassian blur function
+        scale: whether to scale the data values
+        overwrite: overwrite any existing files
+
+    Returns: locations of the saved files containing the processed data
+
+    """
+
     logger = logging.getLogger(__name__)
     file_suffix = ""  # what we append to the saved file names
 

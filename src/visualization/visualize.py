@@ -4,18 +4,14 @@ import sys
 import tqdm
 import logging
 
-import pandas as pd
 import itertools as it
 import numpy as np
 import matplotlib.pyplot as plt
-import kneed as kn
-import sklearn.decomposition as decomp
 
 # add project modules to the path
 path_to_module = os.path.abspath(os.path.join(os.getcwd(), "..", "src/"))
 sys.path.append(path_to_module)
 
-import src.models.train_model as train_model
 
 
 def average_image_by_class(X,
@@ -47,6 +43,16 @@ def average_image_by_class(X,
 
 def plot_images(images_dict, plotting=True):
 
+    """
+    shows the mean class images on a single plot
+    Args:
+        images_dict: key value pairs of each class (key) and value (mean image)
+        plotting: plot inline or not
+
+    Returns: matplotlib figure and axes containing the mean images by class
+
+    """
+
     fig, axs = plt.subplots(len(images_dict), sharex=True, sharey=True)
 
     for key, fig in zip(images_dict, range(len(images_dict))):
@@ -55,18 +61,32 @@ def plot_images(images_dict, plotting=True):
 
     if plotting:
         plt.plot()
+
     return fig, axs
 
 
 def compare_images(image_dict_list, image_categories=None):
 
+    """
+    Creates plot of mean images by class and processing method for visual comparisons
+    Args:
+        image_dict_list: list of dictionaries, each containing key value pairs of images by class for the different
+            pre-processing method
+        image_categories: list of strings corrisponding to classes in image_dict_list
+
+    Returns: matplotlib figure and axes objects of the created plot
+
+    """
     logger = logging.getLogger(__name__)
 
+    # number the classes if image_categories has not been passed
     if image_categories is None:
-        image_categories = [f"column {n+1}" for n in range(len(image_dict_list))]
+        image_categories = [f"column {n+1}"
+                            for n in range(len(image_dict_list))]
 
     # get all the keys for each of our dictionaries in list
-    keys = [list(dictionary.keys()) for dictionary in image_dict_list]
+    keys = [list(dictionary.keys())
+            for dictionary in image_dict_list]
 
     # same order
     for key in keys:
@@ -84,7 +104,9 @@ def compare_images(image_dict_list, image_categories=None):
                              figsize=(10, 10))
     fig.subplots_adjust(wspace=0, hspace=0)
 
-    for key_index, image_index in it.product(range(len(key_list)), range(len(image_dict_list))):
+    for key_index, image_index in tqdm.tqdm_notebook(it.product(range(len(key_list)), range(len(image_dict_list))),
+                                                     desc="plotting"
+                                                     ):
 
         logger.info(f"plotting at {key_index}:{image_index}")
         axes[key_index, image_index].imshow(image_dict_list[image_index][key_list[key_index]])
