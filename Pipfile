@@ -11,6 +11,7 @@ v = {editable = true,version = "*"}
 sphinx = "*"
 rinohtype = "*"
 sphinxcontrib-napoleon = "*"
+nbconvert = "*"
 
 [packages]
 src = {editable = true,file = "file:///home/edd/Documents/Projects/minst-ensemble"}
